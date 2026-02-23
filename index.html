@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MrRearm – CyberTech Grid</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #00f5ff;
+    --blue: #0080ff;
+    --neon-pink: #ff00c8;
+    --neon-green: #39ff14;
+    --dark: #020b18;
+    --darker: #010810;
+    --glass: rgba(0,245,255,0.05);
+    --glass-border: rgba(0,245,255,0.2);
+    --glow: 0 0 20px rgba(0,245,255,0.5), 0 0 60px rgba(0,245,255,0.2);
+    --glow-pink: 0 0 20px rgba(255,0,200,0.5), 0 0 60px rgba(255,0,200,0.2);
+    --glow-green: 0 0 10px rgba(57,255,20,0.6);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--darker);
+    color: #c8f0ff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* ── CURSOR ── */
+  #cursor {
+    position: fixed; width: 18px; height: 18px;
+    border: 2px solid var(--cyan); border-radius: 50%;
+    pointer-events: none; z-index: 99999;
+    transform: translate(-50%,-50%);
+    transition: transform .08s, border-color .2s;
+    mix-blend-mode: screen;
+  }
+  #cursor-trail {
+    position: fixed; width: 6px; height: 6px;
+    background: var(--cyan); border-radius: 50%;
+    pointer-events: none; z-index: 99998;
+    transform: translate(-50%,-50%);
+    transition: left .15s ease, top .15s ease;
+    mix-blend-mode: screen;
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      linear-gradient(rgba(0,245,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,.03) 1px, transparent 1px),
+      radial-gradient(ellipse at 20% 50%, rgba(0,128,255,.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(255,0,200,.06) 0%, transparent 50%),
+      var(--darker);
+    background-size: 60px 60px, 60px 60px, 100% 100%, 100% 100%;
+    animation: gridPulse 8s ease-in-out infinite;
+  }
+  @keyframes gridPulse {
+    0%,100%{ opacity:1 }
+    50%{ opacity:.6 }
+  }
+
+  /* ── SCAN LINE ── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.08) 2px, rgba(0,0,0,.08) 4px);
+    animation: scanMove 20s linear infinite;
+  }
+  @keyframes scanMove {
+    0%{ background-position: 0 0 }
+    100%{ background-position: 0 100vh }
+  }
+
+  main, section, header, footer, nav { position: relative; z-index: 2; }
+
+  /* ── PROGRESS BAR ── */
+  #progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+    background: linear-gradient(90deg, var(--blue), var(--cyan), var(--neon-pink));
+    z-index: 10001;
+    box-shadow: 0 0 10px var(--cyan), 0 0 20px var(--cyan);
+    transition: width .1s linear;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed; top: 3px; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem;
+    height: 64px;
+    background: rgba(2,11,24,.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    z-index: 10000;
+    box-shadow: 0 0 30px rgba(0,245,255,.1);
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem; font-weight: 900;
+    color: var(--cyan);
+    text-decoration: none;
+    text-shadow: var(--glow);
+    letter-spacing: .15em;
+    position: relative;
+  }
+  .logo::after {
+    content: '_';
+    animation: blink 1.2s step-end infinite;
+    color: var(--neon-pink);
+  }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+
+  /* ── HAMBURGER ── */
+  #hamburger {
+    display: flex; flex-direction: column; gap: 5px;
+    cursor: pointer; padding: 8px; z-index: 10001;
+    background: none; border: none;
+  }
+  .hb-line {
+    width: 28px; height: 2px;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    transition: all .3s ease;
+    display: block;
+  }
+  #hamburger.open .hb-line:nth-child(1){ transform: rotate(45deg) translate(5px,5px); }
+  #hamburger.open .hb-line:nth-child(2){ opacity:0; transform: translateX(-10px); }
+  #hamburger.open .hb-line:nth-child(3){ transform: rotate(-45deg) translate(5px,-5px); }
+
+  /* ── NAV OVERLAY ── */
+  #nav-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(2,11,24,.97);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 2rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity .4s ease;
+    backdrop-filter: blur(30px);
+  }
+  #nav-overlay.open { opacity: 1; pointer-events: all; }
+
+  .nav-link {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem; color: var(--cyan);
+    text-decoration: none; letter-spacing: .2em;
+    text-shadow: var(--glow);
+    position: relative; padding: .3rem 1rem;
+    transition: color .2s, text-shadow .2s;
+  }
+  .nav-link::before {
+    content:'> '; color: var(--neon-pink);
+    font-size: 1rem; vertical-align: middle;
+  }
+  .nav-link:hover { color: var(--neon-pink); text-shadow: var(--glow-pink); }
+
+  /* ── HERO ── */
+  #home {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; text-align: center; padding: 6rem 2rem 4rem;
+    position: relative;
+  }
+
+  .hero-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2.5rem, 8vw, 6rem);
+    font-weight: 900; letter-spacing: .08em;
+    background: linear-gradient(90deg, var(--blue), var(--cyan), var(--neon-pink), var(--cyan));
+    background-size: 300% 100%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: textFlow 4s linear infinite;
+    margin-bottom: 1rem;
+    line-height: 1.1;
+  }
+  @keyframes textFlow {
+    0%{background-position:0% 50%}
+    100%{background-position:300% 50%}
+  }
+
+  .hero-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(.85rem, 2vw, 1.1rem);
+    color: rgba(0,245,255,.6);
+    letter-spacing: .25em; margin-bottom: 2rem;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    padding: .5rem 1.5rem;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .85rem;
+    letter-spacing: .2em;
+    box-shadow: var(--glow), inset 0 0 20px rgba(0,245,255,.05);
+    animation: borderPulse 3s ease-in-out infinite;
+    text-decoration: none;
+    transition: all .3s;
+  }
+  .hero-badge:hover {
+    background: rgba(0,245,255,.1);
+    box-shadow: var(--glow), inset 0 0 40px rgba(0,245,255,.1);
+  }
+  @keyframes borderPulse {
+    0%,100%{ box-shadow: var(--glow), inset 0 0 20px rgba(0,245,255,.05) }
+    50%{ box-shadow: 0 0 40px rgba(0,245,255,.7), 0 0 80px rgba(0,245,255,.3), inset 0 0 20px rgba(0,245,255,.05) }
+  }
+
+  /* Floating particles */
+  .particles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .particle {
+    position: absolute; width: 2px; height: 2px;
+    background: var(--cyan); border-radius: 50%;
+    animation: floatUp linear infinite;
+    box-shadow: 0 0 4px var(--cyan);
+  }
+  @keyframes floatUp {
+    0%{ transform: translateY(100vh) translateX(0); opacity:0; }
+    10%{ opacity: 1 }
+    90%{ opacity: 1 }
+    100%{ transform: translateY(-20px) translateX(30px); opacity:0; }
+  }
+
+  /* ── SECTION COMMON ── */
+  section { padding: 6rem 2rem; max-width: 1200px; margin: 0 auto; }
+
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.3rem, 3vw, 2rem);
+    color: var(--cyan);
+    letter-spacing: .2em;
+    text-shadow: var(--glow);
+    margin-bottom: 3rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .section-title::before {
+    content: '//';
+    color: var(--neon-pink);
+    font-size: 1.2rem;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--cyan), transparent);
+    box-shadow: 0 0 6px var(--cyan);
+  }
+
+  /* ── ARTICLES ── */
+  .articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .article-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+    transition: border-color .3s, box-shadow .3s;
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+  }
+  .article-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,245,255,.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .article-card:hover {
+    border-color: var(--cyan);
+    box-shadow: var(--glow);
+  }
+  .article-card::after {
+    content: '';
+    position: absolute; top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,245,255,.06), transparent);
+    transition: left .6s ease;
+  }
+  .article-card:hover::after { left: 150%; }
+
+  .article-header {
+    padding: 1.4rem 1.4rem .8rem;
+    cursor: pointer;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+  }
+  .article-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .65rem; letter-spacing: .2em;
+    color: var(--neon-pink);
+    text-shadow: var(--glow-pink);
+    margin-bottom: .5rem;
+  }
+  .article-title {
+    font-family: 'Orbitron', monospace;
+    font-size: .95rem; color: var(--cyan);
+    line-height: 1.4; font-weight: 700;
+  }
+  .article-toggle {
+    min-width: 24px; height: 24px;
+    border: 1px solid var(--cyan);
+    color: var(--cyan); font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .4s, background .3s, box-shadow .3s;
+    font-family: 'Share Tech Mono', monospace;
+    flex-shrink: 0; margin-top: .2rem;
+    box-shadow: 0 0 6px rgba(0,245,255,.3);
+  }
+  .article-card.open .article-toggle {
+    transform: rotate(45deg);
+    background: rgba(0,245,255,.15);
+    box-shadow: var(--glow);
+  }
+
+  .article-body {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows .5s cubic-bezier(.4,0,.2,1);
+  }
+  .article-card.open .article-body { grid-template-rows: 1fr; }
+  .article-body-inner {
+    overflow: hidden;
+    padding: 0 1.4rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .95rem; line-height: 1.7;
+    color: rgba(200,240,255,.75);
+  }
+  .article-card.open .article-body-inner { padding-bottom: 1.4rem; }
+
+  .article-meta {
+    padding: .6rem 1.4rem 1rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .7rem;
+    color: rgba(0,245,255,.4);
+    display: flex; gap: 1rem; flex-wrap: wrap;
+  }
+
+  /* ── ABOUT ── */
+  .about-box {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    padding: 2.5rem;
+    clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 30px 100%, 0 calc(100% - 30px));
+    box-shadow: var(--glow);
+    display: flex; gap: 2.5rem; flex-wrap: wrap; align-items: center;
+  }
+  .about-avatar {
+    width: 120px; height: 120px; border-radius: 50%;
+    border: 2px solid var(--cyan);
+    box-shadow: var(--glow), 0 0 0 8px rgba(0,245,255,.05);
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #0a1a2e, #0080ff22);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem;
+    animation: avatarPulse 4s ease-in-out infinite;
+  }
+  @keyframes avatarPulse {
+    0%,100%{ box-shadow: var(--glow), 0 0 0 8px rgba(0,245,255,.05) }
+    50%{ box-shadow: 0 0 40px rgba(0,245,255,.8), 0 0 80px rgba(0,245,255,.3), 0 0 0 8px rgba(0,245,255,.1) }
+  }
+  .about-text h3 {
+    font-family: 'Orbitron', monospace; font-size: 1.3rem;
+    color: var(--cyan); margin-bottom: .8rem;
+    text-shadow: var(--glow);
+  }
+  .about-text p { line-height: 1.8; color: rgba(200,240,255,.75); }
+
+  /* ── SOCIAL ── */
+  .social-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+
+  .social-card {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.2rem;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    text-decoration: none; color: #c8f0ff;
+    transition: all .3s ease;
+    position: relative; overflow: hidden;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  }
+  .social-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,245,255,.1) 0%, transparent 100%);
+    opacity: 0; transition: opacity .3s;
+  }
+  .social-card:hover::before { opacity: 1; }
+  .social-card:hover {
+    border-color: var(--cyan);
+    box-shadow: var(--glow);
+    transform: translateX(4px);
+    color: var(--cyan);
+  }
+  .social-icon {
+    font-size: 1.6rem; flex-shrink: 0;
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+  .social-info { min-width: 0; }
+  .social-name {
+    font-family: 'Orbitron', monospace; font-size: .75rem;
+    font-weight: 700; letter-spacing: .1em;
+    color: var(--cyan); text-shadow: 0 0 8px rgba(0,245,255,.5);
+  }
+  .social-handle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .7rem; color: rgba(0,245,255,.5);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ── TOP BUTTON ── */
+  #top-btn {
+    position: fixed; bottom: 6rem; right: 1.5rem;
+    width: 46px; height: 46px; z-index: 9000;
+    background: rgba(2,11,24,.9);
+    border: 1px solid var(--cyan);
+    color: var(--cyan); font-size: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    clip-path: polygon(50% 0%, 100% 50%, 80% 50%, 80% 100%, 20% 100%, 20% 50%, 0% 50%);
+    box-shadow: var(--glow);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s, transform .3s;
+    transform: translateY(10px);
+    backdrop-filter: blur(10px);
+    animation: topBtnPulse 2s ease-in-out infinite;
+  }
+  #top-btn.visible { opacity: 1; pointer-events: all; transform: translateY(0); }
+  @keyframes topBtnPulse {
+    0%,100%{ box-shadow: var(--glow) }
+    50%{ box-shadow: 0 0 30px rgba(0,245,255,.8) }
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative; z-index: 2;
+    background: rgba(2,11,24,.98);
+    border-top: 1px solid var(--glass-border);
+    padding: 3rem 2rem 0;
+    text-align: center;
+    overflow: hidden;
+    contain: layout style;
+  }
+  .footer-content {
+    max-width: 800px; margin: 0 auto;
+    padding-bottom: 2rem;
+  }
+  .footer-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5rem; color: var(--cyan);
+    text-shadow: var(--glow); margin-bottom: .5rem; font-weight:900;
+  }
+  .footer-copy {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .75rem; color: rgba(0,245,255,.4);
+    letter-spacing: .1em;
+  }
+
+  /* ── THRUSTERS ── */
+  .thrusters {
+    display: flex; justify-content: center; gap: 3rem;
+    padding: 1.5rem 0 0; flex-wrap: wrap;
+    min-height: 140px;
+    align-items: flex-start;
+    contain: layout;
+  }
+  .thruster {
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+    position: relative;
+  }
+  .thruster-body {
+    width: 36px; height: 50px;
+    background: linear-gradient(180deg, rgba(0,128,255,.3), rgba(0,245,255,.1));
+    border: 1px solid rgba(0,245,255,.4);
+    clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
+    position: relative;
+  }
+  .thruster-body::before {
+    content:'';
+    position:absolute; inset: 4px;
+    background: linear-gradient(180deg, rgba(0,200,255,.2), transparent);
+  }
+  .thruster-flame {
+    width: 24px;
+    height: 60px;
+    flex-shrink: 0;
+    transform-origin: top center;
+    will-change: transform, filter;
+    animation: flameAnim 0.18s ease-in-out infinite alternate;
+  }
+  @keyframes flameAnim {
+    0%  { transform: scaleY(.70) scaleX(1.00); filter: drop-shadow(0 0 8px #00f5ff) drop-shadow(0 0 16px #0080ff); }
+    25% { transform: scaleY(.95) scaleX(0.90); filter: drop-shadow(0 0 12px #00f5ff) drop-shadow(0 0 24px #0080ff); }
+    50% { transform: scaleY(.60) scaleX(1.10); filter: drop-shadow(0 0 6px #ff00c8)  drop-shadow(0 0 14px #0080ff); }
+    75% { transform: scaleY(1.05) scaleX(0.85); filter: drop-shadow(0 0 14px #00f5ff) drop-shadow(0 0 28px #ff00c8); }
+    100%{ transform: scaleY(.80) scaleX(0.95); filter: drop-shadow(0 0 10px #00f5ff) drop-shadow(0 0 20px #0080ff); }
+  }
+  .flame-svg { width: 100%; height: 100%; }
+  .thruster-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .55rem; color: rgba(0,245,255,.4);
+    letter-spacing: .1em; margin-top: 4px;
+  }
+
+  /* ── GLITCH ANIM ── */
+  .glitch {
+    position: relative;
+    animation: glitchAnim 8s ease-in-out infinite;
+  }
+  @keyframes glitchAnim {
+    0%,90%,100%{ text-shadow: var(--glow); }
+    91%{ text-shadow: 4px 0 var(--neon-pink), -4px 0 var(--blue); }
+    92%{ text-shadow: -2px 0 var(--cyan), 2px 0 var(--neon-pink); }
+    93%{ text-shadow: var(--glow); }
+    95%{ text-shadow: 3px 0 var(--neon-green), -3px 0 var(--neon-pink); }
+    96%{ text-shadow: var(--glow); }
+  }
+
+  /* ── TECH BADGES ── */
+  .tech-badges { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+  .tech-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .7rem; padding: .2rem .6rem;
+    border: 1px solid rgba(0,245,255,.3);
+    color: var(--cyan); letter-spacing: .1em;
+    background: rgba(0,245,255,.05);
+  }
+
+  /* responsive */
+  @media(max-width:600px){
+    .articles-grid{ grid-template-columns: 1fr; }
+    .social-grid{ grid-template-columns: 1fr; }
+    .about-box{ flex-direction: column; align-items: flex-start; }
+    .nav-link{ font-size: 1.2rem; }
+  }
+
+  /* ── STATS BAR ── */
+  .stats-row {
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+    margin-top: 2rem; justify-content: center;
+  }
+  .stat-box {
+    flex: 1; min-width: 140px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    padding: 1.2rem 1.5rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+  }
+  .stat-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem; font-weight: 900;
+    color: var(--cyan); text-shadow: var(--glow);
+    display: block;
+  }
+  .stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .7rem; color: rgba(0,245,255,.5);
+    letter-spacing: .15em;
+  }
+
+  /* LOADING OVERLAY */
+  #loader {
+    position: fixed; inset: 0; z-index: 99999;
+    background: var(--darker);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1rem;
+    transition: opacity .8s ease;
+  }
+  #loader.fade-out { opacity: 0; pointer-events: none; }
+  .loader-ring {
+    width: 80px; height: 80px;
+    border: 2px solid transparent;
+    border-top-color: var(--cyan);
+    border-right-color: var(--neon-pink);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    box-shadow: 0 0 20px rgba(0,245,255,.3);
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loader-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .8rem; color: var(--cyan); letter-spacing: .3em;
+    animation: loaderTyping 2s steps(20) forwards;
+  }
+  @keyframes loaderTyping {
+    0%{ width: 0; overflow: hidden }
+    100%{ width: 100% }
+  }
+
+  /* NEON LINE decorations */
+  .neon-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--neon-pink), var(--cyan), transparent);
+    box-shadow: 0 0 10px var(--cyan);
+    margin: 2rem 0;
+    animation: linePulse 3s ease-in-out infinite;
+  }
+  @keyframes linePulse {
+    0%,100%{ opacity:.5 }
+    50%{ opacity:1 }
+  }
+
+  /* DATA STREAM side decoration */
+  .data-stream {
+    position: fixed; top: 0; right: 1rem; bottom: 0;
+    width: 1px; background: rgba(0,245,255,.05);
+    z-index: 1; pointer-events: none;
+    overflow: hidden;
+  }
+  .data-stream::before {
+    content: '';
+    position: absolute; left: 0; top: -100%;
+    width: 1px; height: 100px;
+    background: linear-gradient(transparent, var(--cyan), transparent);
+    animation: streamDown 4s linear infinite;
+    box-shadow: 0 0 8px var(--cyan);
+  }
+  .data-stream:nth-child(2) { left: 1rem; right: auto; }
+  .data-stream:nth-child(2)::before { animation-delay: -2s; }
+  @keyframes streamDown {
+    0%{ top: -100px }
+    100%{ top: 100vh }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-text">INITIALIZING CYBERTECH GRID...</div>
+</div>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar"></div>
+
+<!-- DATA STREAMS -->
+<div class="data-stream"></div>
+<div class="data-stream"></div>
+
+<!-- HEADER -->
+<header>
+  <a href="#home" class="logo glitch">MrRearm</a>
+  <button id="hamburger" aria-label="Menu">
+    <span class="hb-line"></span>
+    <span class="hb-line"></span>
+    <span class="hb-line"></span>
+  </button>
+</header>
+
+<!-- NAV OVERLAY -->
+<div id="nav-overlay">
+  <a href="#home" class="nav-link" data-nav>HOME</a>
+  <a href="#articles" class="nav-link" data-nav>ARTICOLI</a>
+  <a href="#about" class="nav-link" data-nav>CHI SONO</a>
+  <a href="#social" class="nav-link" data-nav>SOCIAL</a>
+  <a href="#contact" class="nav-link" data-nav>CONTATTI</a>
+</div>
+
+<!-- HERO -->
+<section id="home" style="padding-top:5rem">
+  <div class="particles" id="particles"></div>
+  <div class="hero-title glitch">MRREARM</div>
+  <div class="hero-sub">// CYBERTECH · INFORMATICA · FUTURO //</div>
+  <p style="max-width:550px;text-align:center;color:rgba(200,240,255,.65);font-size:.95rem;line-height:1.8;margin-bottom:2rem;">
+    Esplora il confine digitale. Articoli di divulgazione informatica, tecnologia, intelligenza artificiale e molto altro dall'universo cyber.
+  </p>
+  <a href="https://www.mrrearm.it" class="hero-badge" target="_blank">» ENTRA NEL GRID «</a>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <span class="stat-val" id="cnt-articles">12</span>
+      <span class="stat-label">ARTICOLI</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-val">10+</span>
+      <span class="stat-label">PIATTAFORME</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-val">∞</span>
+      <span class="stat-label">CURIOSITÀ</span>
+    </div>
+  </div>
+</section>
+
+<div class="neon-line" style="max-width:1200px;margin:0 auto 0"></div>
+
+<!-- ARTICLES -->
+<section id="articles" style="max-width:1200px;margin:0 auto">
+  <div class="section-title">CYBER FEED</div>
+  <div class="articles-grid" id="articles-grid">
+
+    <div class="article-card">
+      <div class="article-header" onclick="toggleArticle(this)">
+        <div>
+          <div class="article-tag">// INTELLIGENZA ARTIFICIALE</div>
+          <div class="article-title">GPT-5 e il Futuro dei Large Language Models</div>
+        </div>
+        <div class="article-toggle">+</div>
+      </div>
+      <div class="article-body">
+        <div class="article-body-inner">
+          I Large Language Models stanno ridefinendo il confine tra intelligenza umana e artificiale. Con GPT-5 e i suoi successori, stiamo assistendo a salti quantici nella comprensione del contesto, nel ragionamento multi-step e nella capacità di gestire input multimodali. La vera rivoluzione non è nella dimensione del modello ma nell'efficienza dell'architettura: MoE (Mixture of Experts) permette attivazione selettiva di parametri, riducendo costi computazionali del 70% mantenendo performance elite. Il prossimo step? Modelli capaci di vero ragionamento causale, non solo correlazione statistica.
+          <div class="tech-badges">
+            <span class="tech-badge">LLM</span>
+            <span class="tech-badge">GPT-5</span>
+            <span class="tech-badge">MoE</span>
+            <span class="tech-badge">AI</span>
+          </div>
+        </div>
+      </div>
+      <div class="article-meta"><span>⏱ 5 min read</span><span>📅 2025</span><span>🔥 AI</span></div>
+    </div>
+
+    <div class="article-card">
+      <div class="article-header" onclick="toggleArticle(this)">
+        <div>
+          <div class="article-tag">// CYBERSECURITY</div>
+          <div class="article-title">Zero-Day Exploits: L'Arte della Guerra Digitale</div>
+        </div>
+        <div class="article-toggle">+</div>
+      </div>
+      <div class="article-body">
+        <div class="article-body-inner">
+          Un exploit zero-day è una vulnerabilità software sconosciuta al produttore, sfruttata dagli attaccanti prima che esista una patch. Il mercato nero di questi exploit vale miliardi: un singolo 0-day per iOS può valere oltre 2 milioni di dollari. Le difese moderne si basano su sandboxing avanzato, behavioral analysis e threat hunting proattivo. L'approccio Zero Trust Architecture ("non fidarti mai, verifica sempre") sta diventando lo standard per le infrastrutture critiche, eliminando il concetto di perimetro sicuro a favore di autenticazione continua e microsegmentazione.
+          <div class="tech-badges">
+            <span class="tech-badge">0-DAY</span>
+            <span class="tech-badge">ZERO TRUST</span>
+            <span class="tech-badge">EXPLOIT</span>
+          </div>
+        </div>
+      </div>
+      <div class="article-meta"><span>⏱ 6 min read</span><span>📅 2025</span><span>🔒 SEC</span></div>
+    </div>
+
+    <div class="article-card">
+      <div class="article-header" onclick="toggleArticle(this)">
+        <div>
+          <div class="article-tag">// QUANTUM COMPUTING</div>
+          <div class="article-title">Il Vantaggio Quantistico: Realtà o Hype?</div>
+        </div>
+        <div class="article-toggle">+</div>
+      </div>
+      <div class="article-body">
+        <div class="article-body-inner">
+          I computer quantistici sfruttano sovrapposizione e entanglement per eseguire calcoli impossibili ai sistemi classici. Google Willow ha dimostrato una chip da 105 qubit capace di risolvere in 5 minuti problemi che richiederebbero 10 septilioni di anni ai supercomputer. La minaccia più concreta è per la crittografia: l'algoritmo di Shor può fattorizzare numeri enormi, mettendo a rischio RSA e le chiavi pubbliche attuali. La risposta? Post-Quantum Cryptography (PQC) con algoritmi reticolo-based, già standardizzati da NIST nel 2024.
+          <div class="tech-badges">
+            <span class="tech-badge">QUBIT</span>
+            <span class="tech-badge">PQC</span>
+            <span class="tech-badge">WILLOW</span>
+          </div>
+        </div>
+      </div>
+      <div class="article-meta"><span>⏱ 7 min read</span><span>📅 2025</span><span>⚛️ QUANTUM</span></div>
+    </div>
+
+    <div class="article-card">
+      <div class="article-header" onclick="toggleArticle(this)">
+        <div>
+          <div class="article-tag">// LINUX & OPEN SOURCE</div>
+          <div class="article-title">Il Kernel Linux 6.x: Rivoluzione nel Basso Livello</div>
+        </div>
+        <div class="article-toggle">+</div>
+      </div>
+      <div class="article-body">
+        <div class="article-body-inner">
+          Il kernel Linux 6.x porta innovazioni fondamentali: il nuovo scheduler EEVDF (Earliest Eligible Virtual Deadline First) sostituisce il CFS migliorando latency nei carichi interattivi. Rust diventa prima lingua di programmazione ufficiale affiancata al C, garantendo memory safety a livello kernel senza GC overhead. L'integrazione con io_uring per I/O asincrono riduce le syscall del 60% in benchmark storage-intensive. Per chi usa Wayland, i miglioramenti al DRM subsystem e supporto nativo per display HDR 16-bit cambiano il gioco.
+          <div class="tech-badges">
+            <span class="tech-badge">LINUX</span>
+            <span class="tech-badge">RUST</span>
+            <span class="tech-badge">KERNEL</span>
+            <span class="tech-badge">EEVDF</span>
+          </div>
+        </div>
+      </div>
+      <div class="article-meta"><span>⏱ 5 min read</span><span>📅 2025</span><span>🐧 LINUX</span></div>
+    </div>
+
+    <div class="article-card">
+      <div class="article-header" onclick="toggleArticle(this)">
+        <div>
+          <div class="article-tag">// NETWORKING</div>
+          <div class="article-title">Wi-Fi 7 e la Nuova Era della Connettività Wireless</div>
+        </div>
+        <div class="article-toggle">+</div>
+      </div>
+      <div class="article-body">
+        <div class="article-body-inner">
+          Wi-Fi 7 (802.11be) opera su tre bande simultaneamente (2.4/5/6 GHz) con Multi-Link Operation, raggiungendo throughput teorici di 46 Gbps. La tecnologia MLO combina canali da bande diverse per ridurre latenza sotto i 2ms — essenziale per gaming competitivo, XR e applicazioni industriali real-time. I canali da 320 MHz nella banda 6 GHz e l'uso di 4096-QAM raddoppiano la densità spettrale rispetto al predecessore. Il vero salto? La gestione deterministica del traffico rende il wireless finalmente competitivo con Ethernet in ambienti industriali.
+          <div class="tech-badges">
+            <span class="tech-badge">Wi-Fi 7</span>
+            <span class="tech-badge">MLO</span>
+            <span class="tech-badge">6GHz</span>
+          </div>
+        </div>
+      </div>
+      <div class="article-meta"><span>⏱ 4 min read</span><span>📅 2025</span><span>📡 NET</span></div>
+    </div>
+
+    <div class="article-card">
+      <div class="article-header" onclick="toggleArticle(this)">
+        <div>
+          <div class="article-tag">// BLOCKCHAIN & WEB3</div>
+          <div class="article-title">Beyond Bitcoin: Il Futuro dei Protocolli Decentralizzati</div>
+        </div>
+        <div class="article-toggle">+</div>
+      </div>
+      <div class="article-body">
+        <div class="article-body-inner">
+          Il Layer 2 di Ethereum (Arbitrum, Optimism, zkSync) ha risolto il trilemma scalabilità/sicurezza/decentralizzazione portando le transazioni a <0.01$ con finalità in secondi. I Validity Proofs con ZK-SNARKs permettono verifiche crittografiche senza rivelare i dati — fondamentale per identità digitale sovrana e sistemi di voto. Le DAOs (Decentralized Autonomous Organizations) stanno sperimentando nuovi modelli di governance on-chain, sfidando le strutture corporative tradizionali. Il prossimo frontier: DePIN (Decentralized Physical Infrastructure Networks) dove la blockchain coordina reti fisiche reali di sensori, antenne e storage.
+          <div class="tech-badges">
+            <span class="tech-badge">ZK-SNARKs</span>
+            <span class="tech-badge">L2</span>
+            <span class="tech-badge">DAO</span>
+            <span class="tech-badge">DePIN</span>
+          </div>
+        </div>
+      </div>
+      <div class="article-meta"><span>⏱ 6 min read</span><span>📅 2025</span><span>⛓️ WEB3</span></div>
+    </div>
+
+    <div class="article-card">
+      <div class="article-header" onclick="toggleArticle(this)">
+        <div>
+          <div class="article-tag">// HARDWARE</div>
+          <div class="article-title">NPU e l'Era dell'AI Edge Computing</div>
+        </div>
+        <div class="article-toggle">+</div>
+      </div>
+      <div class="article-body">
+        <div class="article-body-inner">
+          Le Neural Processing Units integrate nei moderni SoC (Apple M-series, Snapdragon Elite, AMD Ryzen AI) eseguono inferenza AI direttamente sul dispositivo, bypassando il cloud. Apple Neural Engine raggiunge 38 TOPS (Tera Operations Per Second) col M4, gestendo modelli da miliardi di parametri offline. Qualcomm Hexagon NPU permette di eseguire Llama 3 localmente su smartphone — un cambio di paradigma per privacy, latenza e offline capability. Intel AI Boost nei Core Ultra porta AI generativa nei laptop consumer con impatto minimo sull'autonomia grazie all'architettura eterogenea P+E+LPE core.
+          <div class="tech-badges">
+            <span class="tech-badge">NPU</span>
+            <span class="tech-badge">EDGE AI</span>
+            <span class="tech-badge">TOPS</span>
+            <span class="tech-badge">M4</span>
+          </div>
+        </div>
+      </div>
+      <div class="article-meta"><span>⏱ 5 min read</span><span>📅 2025</span><span>💾 HW</span></div>
+    </div>
+
+    <div class="article-card">
+      <div class="article-header" onclick="toggleArticle(this)">
+        <div>
+          <div class="article-tag">// PRIVACY & LEGISLAZIONE</div>
+          <div class="article-title">AI Act Europeo: Impatto sul Mondo Tech</div>
+        </div>
+        <div class="article-toggle">+</div>
+      </div>
+      <div class="article-body">
+        <div class="article-body-inner">
+          L'AI Act dell'UE (in vigore dal 2024-26) classifica i sistemi AI per livello di rischio: vietati (social scoring), alto rischio (infrastrutture critiche, selezione del personale), limitato e minimo. I modelli general-purpose come GPT-4 e Claude rientrano nei GPAI con obblighi di trasparenza e valutazione del rischio sistémico per i modelli con potenza computazionale >10^25 FLOP. Le sanzioni arrivano fino al 7% del fatturato globale. L'Europa punta a diventare il gold standard mondiale della regolamentazione AI, con effetti extraterritoriali simili al GDPR.
+          <div class="tech-badges">
+            <span class="tech-badge">AI ACT</span>
+            <span class="tech-badge">GPAI</span>
+            <span class="tech-badge">EU</span>
+            <span class="tech-badge">GDPR</span>
+          </div>
+        </div>
+      </div>
+      <div class="article-meta"><span>⏱ 6 min read</span><span>📅 2025</span><span>⚖️ LAW</span></div>
+    </div>
+
+  </div>
+</section>
+
+<div class="neon-line" style="max-width:1200px;margin:2rem auto"></div>
+
+<!-- ABOUT -->
+<section id="about" style="max-width:1200px;margin:0 auto">
+  <div class="section-title">IDENTITÀ DIGITALE</div>
+  <div class="about-box">
+    <div class="about-avatar">🤖</div>
+    <div class="about-text">
+      <h3>// MrRearm — RayRearm</h3>
+      <p>
+        Appassionato di tecnologia, informatica e tutto ciò che sta nel confine tra il digitale e il reale. Creatore di contenuti su piattaforme multiple: dalla divulgazione informatica alla spiritualità, dai testi di canzoni alle recensioni cinematografiche. Il mio universo è vasto e variegato come il Grid.
+      </p>
+      <div class="tech-badges">
+        <span class="tech-badge">LINUX</span>
+        <span class="tech-badge">AI</span>
+        <span class="tech-badge">CYBERSEC</span>
+        <span class="tech-badge">OPEN SOURCE</span>
+        <span class="tech-badge">MUSICA</span>
+        <span class="tech-badge">SPIRITUALITÀ</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL -->
+<section id="social" style="max-width:1200px;margin:0 auto">
+  <div class="section-title">NETWORK GRID</div>
+  <div class="social-grid">
+
+    <a href="https://www.mrrearm.it" target="_blank" class="social-card">
+      <div class="social-icon">🌐</div>
+      <div class="social-info">
+        <div class="social-name">SITO WEB</div>
+        <div class="social-handle">mrrearm.it</div>
+      </div>
+    </a>
+
+    <a href="https://github.com/mrrearm" target="_blank" class="social-card">
+      <div class="social-icon">⚙️</div>
+      <div class="social-info">
+        <div class="social-name">GITHUB</div>
+        <div class="social-handle">@mrrearm</div>
+      </div>
+    </a>
+
+    <a href="https://instagram.com/mrrearm" target="_blank" class="social-card">
+      <div class="social-icon">📸</div>
+      <div class="social-info">
+        <div class="social-name">INSTAGRAM</div>
+        <div class="social-handle">@mrrearm</div>
+      </div>
+    </a>
+
+    <a href="https://facebook.com/mrrearm" target="_blank" class="social-card">
+      <div class="social-icon">📘</div>
+      <div class="social-info">
+        <div class="social-name">FACEBOOK</div>
+        <div class="social-handle">/mrrearm</div>
+      </div>
+    </a>
+
+    <a href="https://x.com/RayRearm" target="_blank" class="social-card">
+      <div class="social-icon">✖️</div>
+      <div class="social-info">
+        <div class="social-name">X / TWITTER</div>
+        <div class="social-handle">@RayRearm</div>
+      </div>
+    </a>
+
+    <a href="https://youtube.com/user/RayRearm" target="_blank" class="social-card">
+      <div class="social-icon">▶️</div>
+      <div class="social-info">
+        <div class="social-name">YOUTUBE</div>
+        <div class="social-handle">RayRearm</div>
+      </div>
+    </a>
+
+    <a href="https://www.tiktok.com/@raydrearm" target="_blank" class="social-card">
+      <div class="social-icon">🎵</div>
+      <div class="social-info">
+        <div class="social-name">TIK TOK</div>
+        <div class="social-handle">@raydrearm</div>
+      </div>
+    </a>
+
+    <a href="https://t.me/mondotek" target="_blank" class="social-card">
+      <div class="social-icon">✈️</div>
+      <div class="social-info">
+        <div class="social-name">TELEGRAM</div>
+        <div class="social-handle">mondotek</div>
+      </div>
+    </a>
+
+    <a href="https://ko-fi.com/mrrearm" target="_blank" class="social-card">
+      <div class="social-icon">☕</div>
+      <div class="social-info">
+        <div class="social-name">KO-FI</div>
+        <div class="social-handle">mrrearm</div>
+      </div>
+    </a>
+
+    <a href="https://raydrearm81.blogspot.com" target="_blank" class="social-card">
+      <div class="social-icon">🔮</div>
+      <div class="social-info">
+        <div class="social-name">SPIRITUALITÀ</div>
+        <div class="social-handle">raydrearm81.blogspot.com</div>
+      </div>
+    </a>
+
+    <a href="https://raydblog.blogspot.com" target="_blank" class="social-card">
+      <div class="social-icon">💻</div>
+      <div class="social-info">
+        <div class="social-name">BLOG INFORMATICO</div>
+        <div class="social-handle">raydblog.blogspot.com</div>
+      </div>
+    </a>
+
+    <a href="https://pennacuore.blogspot.com" target="_blank" class="social-card">
+      <div class="social-icon">🎶</div>
+      <div class="social-info">
+        <div class="social-name">TESTI CANZONI</div>
+        <div class="social-handle">pennacuore.blogspot.com</div>
+      </div>
+    </a>
+
+    <a href="https://mrrearm.altervista.org/" target="_blank" class="social-card">
+      <div class="social-icon">🎬</div>
+      <div class="social-info">
+        <div class="social-name">FILM & SERIE</div>
+        <div class="social-handle">mrrearm.altervista.org</div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" style="max-width:1200px;margin:0 auto;text-align:center">
+  <div class="section-title" style="justify-content:center">TRASMETTI UN SEGNALE</div>
+  <p style="color:rgba(0,245,255,.5);font-family:'Share Tech Mono',monospace;font-size:.85rem;margin-bottom:1.5rem;">
+    // CONTATTAMI ATTRAVERSO UNO DEI CANALI DEL NETWORK GRID //
+  </p>
+  <a href="https://t.me/mondotek" target="_blank" class="hero-badge" style="margin-right:1rem">
+    ✈️ TELEGRAM
+  </a>
+  <a href="https://ko-fi.com/mrrearm" target="_blank" class="hero-badge" style="border-color:var(--neon-pink);color:var(--neon-pink);box-shadow:var(--glow-pink)">
+    ☕ SUPPORTA
+  </a>
+</section>
+
+<!-- TOP BUTTON -->
+<button id="top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Torna su">▲</button>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-content">
+    <div class="footer-logo glitch">MRREARM</div>
+    <div class="footer-copy" style="margin-bottom:.5rem">
+      // CYBERTECH GRID – DIVULGAZIONE INFORMATICA //
+    </div>
+    <div class="footer-copy">
+      © 2025 MrRearm · Tutti i diritti riservati · Built in the Grid
+    </div>
+  </div>
+
+  <div class="thrusters" id="thrusters"></div>
+</footer>
+
+<script>
+/* ── LOADER ── */
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('fade-out');
+    setTimeout(() => document.getElementById('loader').style.display='none', 900);
+  }, 1800);
+});
+
+/* ── CURSOR ── */
+const cur = document.getElementById('cursor');
+const trail = document.getElementById('cursor-trail');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px';
+  cur.style.top = e.clientY + 'px';
+  setTimeout(() => {
+    trail.style.left = e.clientX + 'px';
+    trail.style.top = e.clientY + 'px';
+  }, 80);
+});
+document.addEventListener('mousedown', () => cur.style.transform='translate(-50%,-50%) scale(1.5)');
+document.addEventListener('mouseup', () => cur.style.transform='translate(-50%,-50%) scale(1)');
+
+/* ── PROGRESS BAR ── */
+window.addEventListener('scroll', () => {
+  const scrollTop = document.documentElement.scrollTop;
+  const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById('progress-bar').style.width = (scrollTop/scrollHeight*100) + '%';
+  document.getElementById('top-btn').classList.toggle('visible', scrollTop > 400);
+});
+
+/* ── HAMBURGER ── */
+const ham = document.getElementById('hamburger');
+const nav = document.getElementById('nav-overlay');
+ham.addEventListener('click', () => {
+  ham.classList.toggle('open');
+  nav.classList.toggle('open');
+});
+document.querySelectorAll('[data-nav]').forEach(link => {
+  link.addEventListener('click', () => {
+    ham.classList.remove('open');
+    nav.classList.remove('open');
+  });
+});
+
+/* ── ARTICLE TOGGLE ── */
+function toggleArticle(header) {
+  const card = header.closest('.article-card');
+  const wasOpen = card.classList.contains('open');
+  // close all
+  document.querySelectorAll('.article-card.open').forEach(c => c.classList.remove('open'));
+  if (!wasOpen) card.classList.add('open');
+}
+
+/* ── PARTICLES ── */
+const particleContainer = document.getElementById('particles');
+for (let i = 0; i < 35; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.style.cssText = `
+    left:${Math.random()*100}%;
+    animation-duration:${6+Math.random()*12}s;
+    animation-delay:-${Math.random()*12}s;
+    width:${1+Math.random()*2}px;
+    height:${1+Math.random()*2}px;
+    opacity:${0.3+Math.random()*0.7};
+    background:${Math.random()>.7?'var(--neon-pink)':Math.random()>.5?'var(--neon-green)':'var(--cyan)'};
+    box-shadow:0 0 ${4+Math.random()*6}px currentColor;
+  `;
+  particleContainer.appendChild(p);
+}
+
+/* ── THRUSTERS ── */
+const thrusterContainer = document.getElementById('thrusters');
+const thrusterCount = window.innerWidth < 600 ? 4 : 7;
+for (let i = 0; i < thrusterCount; i++) {
+  const scaleOffset = 0.7 + Math.random() * 0.5; // random initial scale, not height
+  const delay = -(Math.random() * 0.4).toFixed(2);
+  thrusterContainer.innerHTML += `
+    <div class="thruster">
+      <div class="thruster-body"></div>
+      <div class="thruster-flame" style="animation-delay:${delay}s;animation-duration:${(0.14+Math.random()*0.1).toFixed(2)}s">
+        <svg class="flame-svg" viewBox="0 0 24 60" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="fg${i}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#00f5ff" stop-opacity="1"/>
+              <stop offset="40%" stop-color="#0080ff" stop-opacity=".9"/>
+              <stop offset="75%" stop-color="#ff00c8" stop-opacity=".5"/>
+              <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="12" cy="8" rx="10" ry="8" fill="url(#fg${i})"/>
+          <ellipse cx="12" cy="25" rx="6" ry="20" fill="url(#fg${i})"/>
+          <ellipse cx="12" cy="45" rx="3" ry="15" fill="url(#fg${i})" opacity=".5"/>
+        </svg>
+      </div>
+      <div class="thruster-label">THR-0${i+1}</div>
+    </div>
+  `;
+}
+
+/* ── ARTICLE CARD HOVER SOUND FEEL (visual) ── */
+document.querySelectorAll('.article-card').forEach((card, i) => {
+  card.style.animationDelay = (i * 0.1) + 's';
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(20px)';
+  card.style.transition = 'opacity .6s ease, transform .6s ease, border-color .3s, box-shadow .3s';
+});
+
+/* ── INTERSECTION OBSERVER for cards ── */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.article-card, .social-card, .stat-box').forEach(el => {
+  observer.observe(el);
+});
+
+/* ── RANDOM TERMINAL CHARS in background ── */
+setInterval(() => {
+  // subtle flicker on random tech badges
+  const badges = document.querySelectorAll('.tech-badge');
+  const rnd = badges[Math.floor(Math.random()*badges.length)];
+  if (rnd) {
+    rnd.style.boxShadow = '0 0 10px var(--cyan)';
+    setTimeout(() => rnd.style.boxShadow = '', 300);
+  }
+}, 1200);
+</script>
+</body>
+</html>
